@@ -18,9 +18,15 @@
     .filters {
       margin: 20px 0;
     }
+    label {
+      display: inline-block;
+      margin: 10px 5px 5px;
+      font-weight: bold;
+      color: #444;
+    }
     input[type="date"], input[type="text"] {
       padding: 10px;
-      margin: 10px;
+      margin: 5px 10px;
       border-radius: 8px;
       border: 1px solid #ccc;
       font-family: 'Cairo', sans-serif;
@@ -72,7 +78,9 @@
 <body>
   <h2>📊 إحصائيات الطلبات</h2>
   <div class="filters">
+    <label for="fromDate">📅 من تاريخ:</label>
     <input type="date" id="fromDate" />
+    <label for="toDate">📅 إلى تاريخ:</label>
     <input type="date" id="toDate" />
     <input type="text" id="tableFilter" placeholder="فلترة برقم الطاولة (اختياري)" />
   </div>
