@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>إحصائيات الطلبات</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      font-family: 'Cairo', sans-serif;
+      background-color: #f3f3f3;
+      padding: 30px;
+      text-align: center;
+    }
+    h2 {
+      color: #333;
+    }
+    input[type="date"] {
+      padding: 10px;
+      margin: 20px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-family: 'Cairo', sans-serif;
+    }
+    .stats-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      margin-top: 30px;
+    }
+    .stat-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    .stat-title {
+      font-size: 18px;
+      color: #666;
+      margin-bottom: 10px;
+    }
+    .stat-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #2e7d32;
+    }
+  </style>
+</head>
+<body>
+  <h2>📊 إحصائيات الطلبات</h2>
+  <input type="date" id="datePicker" />
+
+  <div class="stats-container">
+    <div class="stat-card">
+      <div class="stat-title">عدد الطلبات</div>
+      <div class="stat-value" id="orderCount">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-title">إجمالي المبيعات</div>
+      <div class="stat-value" id="totalSales">0 جنيه</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-title">عدد الطاولات</div>
+      <div class="stat-value" id="tableCount">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-title">أكثر الأصناف طلبًا</div>
+      <div class="stat-value" id="topItems">-</div>
+    </div>
+  </div>
+
+  <script>
+    const sheetID = "1bq1d1JsNjUTPjZmAGAGe8a8M8kPeS4dKA0ZW1ucL9fc";
+    const sheetName = "Form Responses 1";
+    const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?sheet=${sheetName}`;
+
+    function fetchDataForDate(selectedDate) {
+      fetch(url)
+        .then(res => res.text())
+        .then(text => {
+          const json = JSON.parse(text.substr(47).slice(0, -2));
+          const rows = json.table.rows;
+
+          const orders = [];
+          rows.forEach(r => {
+            const c = r.c;
+            const dateStr = c[0]?.v;
+            const summary = c[1]?.v || "";
+            const table = c[2]?.v || "";
+            if (!dateStr || !summary) return;
+
+            const fullDate = new Date(dateStr);
+            const dateOnly = fullDate.toISOString().split("T")[0];
+            if (dateOnly === selectedDate) {
+              orders.push({ summary, table });
+            }
+          });
+
+          document.getElementById("orderCount").textContent = orders.length;
+
+          // إجمالي المبيعات
+          let total = 0;
+          const itemCount = {};
+          const tableSet = new Set();
+
+          orders.forEach(order => {
+            tableSet.add(order.table);
+            const lines = order.summary.split("\n");
+            lines.forEach(line => {
+              const match = line.match(/- (.+): (\d+)/);
+              if (match) {
+                const item = match[1];
+                const qty = parseInt(match[2]);
+                itemCount[item] = (itemCount[item] || 0) + qty;
+              } else if (line.includes("الإجمالي")) {
+                const num = line.match(/(\d+)/);
+                if (num) total += parseFloat(num[1]);
+              }
+            });
+          });
+
+          document.getElementById("totalSales").textContent = `${total} جنيه`;
+          document.getElementById("tableCount").textContent = tableSet.size;
+
+          // أكثر الأصناف طلبًا
+          const sortedItems = Object.entries(itemCount).sort((a, b) => b[1] - a[1]);
+          const top3 = sortedItems.slice(0, 3).map(([name, count]) => `${name} (${count})`);
+          document.getElementById("topItems").textContent = top3.join("، ") || "-";
+        });
+    }
+
+    document.getElementById("datePicker").addEventListener("change", e => {
+      const selectedDate = e.target.value;
+      if (selectedDate) fetchDataForDate(selectedDate);
+    });
+  </script>
+</body>
+</html>
