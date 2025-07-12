@@ -129,6 +129,7 @@
 
       const from = new Date(fromDate);
       const to = new Date(toDate);
+      to.setHours(23, 59, 59, 999); // تغطية اليوم بالكامل
 
       fetch(url)
         .then(res => res.text())
