@@ -83,21 +83,17 @@
           const orders = [];
           rows.forEach(r => {
             const c = r.c;
-            const rawDateStr = c[0]?.v;
+            const rawDate = c[0]?.f || c[0]?.v; // استخدم التنسيق الظاهري
             const summary = c[1]?.v || "";
             const table = c[2]?.v || "";
 
-            if (!rawDateStr || !summary) return;
+            if (!rawDate || !summary) return;
 
-            // تحويل التاريخ كنص مثل "7/10/2025 10:24:46"
-            const dateOnly = rawDateStr.split(" ")[0];
-            const parts = dateOnly.split("/");
-            if (parts.length !== 3) return;
+            const datePart = rawDate.split(" ")[0];
+            const [month, day, year] = datePart.split("/");
+            const formatted = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
 
-            const [month, day, year] = parts;
-            const formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-
-            if (formattedDate === selectedDate) {
+            if (formatted === selectedDate) {
               orders.push({ summary, table });
             }
           });
