@@ -128,8 +128,10 @@
       if (!fromDate || !toDate) return;
 
       const from = new Date(fromDate);
+      from.setHours(0, 0, 0, 0); // ✅ نبدأ من أول اليوم
+
       const to = new Date(toDate);
-      to.setHours(23, 59, 59, 999);
+      to.setHours(23, 59, 59, 999); // ✅ ننتهي بآخر لحظة في اليوم
 
       fetch(url)
         .then(res => res.text())
