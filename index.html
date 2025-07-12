@@ -67,10 +67,10 @@
     }
     .charts-wrapper {
       display: flex;
-      justify-content: center;
+      flex-direction: column;
+      align-items: center;
       gap: 30px;
       margin-top: 40px;
-      flex-wrap: wrap;
     }
     canvas {
       max-width: 500px;
@@ -238,7 +238,7 @@
         options: {
           responsive: true,
           plugins: {
-            legend: { position: 'right' },
+            legend: { position: 'bottom' },
             tooltip: {
               callbacks: {
                 label: function(context) {
