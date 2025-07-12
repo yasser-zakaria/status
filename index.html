@@ -128,10 +128,10 @@
       if (!fromDate || !toDate) return;
 
       const from = new Date(fromDate);
-      from.setHours(0, 0, 0, 0); // ✅ نبدأ من أول اليوم
+      from.setHours(0, 0, 0, 0);
 
       const to = new Date(toDate);
-      to.setHours(23, 59, 59, 999); // ✅ ننتهي بآخر لحظة في اليوم
+      to.setHours(23, 59, 59, 999);
 
       fetch(url)
         .then(res => res.text())
@@ -144,14 +144,17 @@
 
           rows.forEach(r => {
             const c = r.c;
-            const rawValue = c[0]?.v;
             const fullDate = c[0]?.f || "";
             const summary = c[1]?.v || "";
             const table = c[2]?.v?.toString() || "";
             const notes = c[3]?.v || "";
 
-            if (!rawValue) return;
-            const rowDate = new Date(rawValue);
+            if (!fullDate) return;
+
+            const [datePart, timePart] = fullDate.split(' ');
+            const [month, day, year] = datePart.split('/').map(Number);
+            const [hour, minute, second] = timePart.split(':').map(Number);
+            const rowDate = new Date(year, month - 1, day, hour, minute, second);
 
             if (rowDate >= from && rowDate <= to && summary && (!tableFilter || table.includes(tableFilter))) {
               orders.push({ summary, table });
