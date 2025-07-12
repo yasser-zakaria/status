@@ -15,9 +15,12 @@
     h2 {
       color: #333;
     }
-    input[type="date"] {
+    .filters {
+      margin: 20px 0;
+    }
+    input[type="date"], input[type="text"] {
       padding: 10px;
-      margin: 20px;
+      margin: 10px;
       border-radius: 8px;
       border: 1px solid #ccc;
       font-family: 'Cairo', sans-serif;
@@ -56,7 +59,10 @@
 </head>
 <body>
   <h2>📊 إحصائيات الطلبات</h2>
-  <input type="date" id="datePicker" />
+  <div class="filters">
+    <input type="date" id="datePicker" />
+    <input type="text" id="tableFilter" placeholder="فلترة برقم الطاولة (اختياري)" />
+  </div>
 
   <div class="stats-container">
     <div class="stat-card">
@@ -85,16 +91,19 @@
     const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?sheet=${sheetName}`;
     let chart;
 
-    document.getElementById("datePicker").addEventListener("change", e => {
-      const date = new Date(e.target.value);
-      const m = date.getMonth() + 1;
-      const d = date.getDate();
-      const y = date.getFullYear();
-      const formattedDate = `${m}/${d}/${y}`;
-      fetchDataForDate(formattedDate);
-    });
+    document.getElementById("datePicker").addEventListener("change", updateStats);
+    document.getElementById("tableFilter").addEventListener("input", updateStats);
 
-    function fetchDataForDate(formattedDate) {
+    function updateStats() {
+      const dateValue = document.getElementById("datePicker").value;
+      if (!dateValue) return;
+      const date = new Date(dateValue);
+      const formattedDate = `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`;
+      const tableFilter = document.getElementById("tableFilter").value.trim();
+      fetchDataForDate(formattedDate, tableFilter);
+    }
+
+    function fetchDataForDate(formattedDate, tableFilter) {
       fetch(url)
         .then(res => res.text())
         .then(text => {
@@ -106,9 +115,9 @@
             const c = r.c;
             const rawDate = (c[0]?.f || "").split(" ")[0];
             const summary = c[1]?.v || "";
-            const table = c[2]?.v || "";
+            const table = c[2]?.v?.toString() || "";
 
-            if (rawDate === formattedDate && summary) {
+            if (rawDate === formattedDate && summary && (!tableFilter || table.includes(tableFilter))) {
               orders.push({ summary, table });
             }
           });
