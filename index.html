@@ -25,6 +25,18 @@
       border: 1px solid #ccc;
       font-family: 'Cairo', sans-serif;
     }
+    .buttons {
+      margin: 20px 0;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+      font-size: 16px;
+      font-family: 'Cairo', sans-serif;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
     .stats-container {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -64,6 +76,11 @@
     <input type="text" id="tableFilter" placeholder="فلترة برقم الطاولة (اختياري)" />
   </div>
 
+  <div class="buttons">
+    <button onclick="printReport()">🖨️ طباعة</button>
+    <button onclick="exportCSV()">📄 تصدير CSV</button>
+  </div>
+
   <div class="stats-container">
     <div class="stat-card">
       <div class="stat-title">عدد الطلبات</div>
@@ -89,7 +106,7 @@
     const sheetID = "1bq1d1JsNjUTPjZmAGAGe8a8M8kPeS4dKA0ZW1ucL9fc";
     const sheetName = "Form Responses 1";
     const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?sheet=${sheetName}`;
-    let chart;
+    let chart, latestCSV = "";
 
     document.getElementById("datePicker").addEventListener("change", updateStats);
     document.getElementById("tableFilter").addEventListener("input", updateStats);
@@ -111,14 +128,20 @@
           const rows = json.table.rows;
 
           const orders = [];
+          latestCSV = "وقت الطلب,ملخص الطلب,رقم الطاولة,ملاحظات\n";
+
           rows.forEach(r => {
             const c = r.c;
-            const rawDate = (c[0]?.f || "").split(" ")[0];
+            const fullDate = c[0]?.f || "";
+            const rawDate = fullDate.split(" ")[0];
             const summary = c[1]?.v || "";
             const table = c[2]?.v?.toString() || "";
+            const notes = c[3]?.v || "";
 
             if (rawDate === formattedDate && summary && (!tableFilter || table.includes(tableFilter))) {
               orders.push({ summary, table });
+              latestCSV += `"${fullDate}","${summary.replace(/\n/g, " ")}","${table}","${notes}"
+`;
             }
           });
 
@@ -195,6 +218,18 @@
           }
         }
       });
+    }
+
+    function printReport() {
+      window.print();
+    }
+
+    function exportCSV() {
+      const blob = new Blob([latestCSV], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'تقرير_الطلبات.csv';
+      link.click();
     }
   </script>
 </body>
