@@ -83,16 +83,15 @@
           const orders = [];
           rows.forEach(r => {
             const c = r.c;
-            const dateStr = c[0]?.v;
+            const rawDate = new Date(c[0]?.f || c[0]?.v);
             const summary = c[1]?.v || "";
             const table = c[2]?.v || "";
-            if (!dateStr || !summary) return;
+            if (isNaN(rawDate) || !summary) return;
 
-            // معالجة التاريخ بشكل يدوي
-            const match = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
-            if (!match) return;
-            const [_, month, day, year] = match;
-            const formattedDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const year = rawDate.getFullYear();
+            const month = String(rawDate.getMonth() + 1).padStart(2, '0');
+            const day = String(rawDate.getDate()).padStart(2, '0');
+            const formattedDate = `${year}-${month}-${day}`;
 
             if (formattedDate === selectedDate) {
               orders.push({ summary, table });
@@ -101,7 +100,6 @@
 
           document.getElementById("orderCount").textContent = orders.length;
 
-          // إجمالي المبيعات
           let total = 0;
           const itemCount = {};
           const tableSet = new Set();
@@ -125,7 +123,6 @@
           document.getElementById("totalSales").textContent = `${total} جنيه`;
           document.getElementById("tableCount").textContent = tableSet.size;
 
-          // أكثر الأصناف طلبًا
           const sortedItems = Object.entries(itemCount).sort((a, b) => b[1] - a[1]);
           const top3 = sortedItems.slice(0, 3).map(([name, count]) => `${name} (${count})`);
           document.getElementById("topItems").textContent = top3.join("، ") || "-";
