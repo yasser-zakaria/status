@@ -73,7 +73,17 @@
     const sheetName = "Form Responses 1";
     const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?sheet=${sheetName}`;
 
-    function fetchDataForDate(selectedDate) {
+    document.getElementById("datePicker").addEventListener("change", e => {
+      const date = new Date(e.target.value);
+      const m = date.getMonth() + 1;
+      const d = date.getDate();
+      const y = date.getFullYear();
+      const formattedDate = `${m}/${d}/${y}`;  // يطابق تنسيق Google Sheets
+
+      fetchDataForDate(formattedDate);
+    });
+
+    function fetchDataForDate(formattedDate) {
       fetch(url)
         .then(res => res.text())
         .then(text => {
@@ -83,17 +93,11 @@
           const orders = [];
           rows.forEach(r => {
             const c = r.c;
-            const rawDate = c[0]?.f || c[0]?.v; // استخدم التنسيق الظاهري
+            const rawDate = (c[0]?.f || "").split(" ")[0]; // مثال: "7/10/2025"
             const summary = c[1]?.v || "";
             const table = c[2]?.v || "";
 
-            if (!rawDate || !summary) return;
-
-            const datePart = rawDate.split(" ")[0];
-            const [month, day, year] = datePart.split("/");
-            const formatted = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-
-            if (formatted === selectedDate) {
+            if (rawDate === formattedDate && summary) {
               orders.push({ summary, table });
             }
           });
@@ -128,11 +132,6 @@
           document.getElementById("topItems").textContent = top3.join("، ") || "-";
         });
     }
-
-    document.getElementById("datePicker").addEventListener("change", e => {
-      const selectedDate = e.target.value;
-      if (selectedDate) fetchDataForDate(selectedDate);
-    });
   </script>
 </body>
 </html>
