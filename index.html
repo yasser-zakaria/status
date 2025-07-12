@@ -15,33 +15,12 @@
     h2 {
       color: #333;
     }
-    .filters {
-      margin: 20px 0;
-    }
-    label {
-      display: inline-block;
-      margin: 10px 5px 5px;
-      font-weight: bold;
-      color: #444;
-    }
-    input[type="date"], input[type="text"] {
+    input[type="date"] {
       padding: 10px;
-      margin: 5px 10px;
+      margin: 20px;
       border-radius: 8px;
       border: 1px solid #ccc;
       font-family: 'Cairo', sans-serif;
-    }
-    .buttons {
-      margin: 20px 0;
-    }
-    button {
-      padding: 10px 20px;
-      margin: 5px;
-      font-size: 16px;
-      font-family: 'Cairo', sans-serif;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
     }
     .stats-container {
       display: grid;
@@ -65,15 +44,9 @@
       font-weight: bold;
       color: #2e7d32;
     }
-    .charts-wrapper {
-      display: flex;
-      justify-content: center;
-      gap: 30px;
-      margin-top: 40px;
-      flex-wrap: wrap;
-    }
     canvas {
-      max-width: 500px;
+      margin-top: 40px;
+      max-width: 700px;
       background: white;
       border-radius: 10px;
       padding: 20px;
@@ -83,18 +56,7 @@
 </head>
 <body>
   <h2>📊 إحصائيات الطلبات</h2>
-  <div class="filters">
-    <label for="fromDate">📅 من تاريخ:</label>
-    <input type="date" id="fromDate" />
-    <label for="toDate">📅 إلى تاريخ:</label>
-    <input type="date" id="toDate" />
-    <input type="text" id="tableFilter" placeholder="فلترة برقم الطاولة (اختياري)" />
-  </div>
-
-  <div class="buttons">
-    <button onclick="printReport()">🖨️ طباعة</button>
-    <button onclick="exportCSV()">📄 تصدير CSV</button>
-  </div>
+  <input type="date" id="datePicker" />
 
   <div class="stats-container">
     <div class="stat-card">
@@ -115,33 +77,24 @@
     </div>
   </div>
 
-  <div class="charts-wrapper">
-    <canvas id="itemChart"></canvas>
-    <canvas id="pieChart"></canvas>
-  </div>
+  <canvas id="itemChart"></canvas>
 
   <script>
     const sheetID = "1bq1d1JsNjUTPjZmAGAGe8a8M8kPeS4dKA0ZW1ucL9fc";
     const sheetName = "Form Responses 1";
     const url = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?sheet=${sheetName}`;
-    let chart, pieChart, latestCSV = "";
+    let chart;
 
-    document.getElementById("fromDate").addEventListener("change", updateStats);
-    document.getElementById("toDate").addEventListener("change", updateStats);
-    document.getElementById("tableFilter").addEventListener("input", updateStats);
+    document.getElementById("datePicker").addEventListener("change", e => {
+      const date = new Date(e.target.value);
+      const m = date.getMonth() + 1;
+      const d = date.getDate();
+      const y = date.getFullYear();
+      const formattedDate = `${m}/${d}/${y}`;
+      fetchDataForDate(formattedDate);
+    });
 
-    function updateStats() {
-      const fromDate = document.getElementById("fromDate").value;
-      const toDate = document.getElementById("toDate").value;
-      const tableFilter = document.getElementById("tableFilter").value.trim();
-      if (!fromDate || !toDate) return;
-
-      const from = new Date(fromDate);
-      from.setHours(0, 0, 0, 0);
-
-      const to = new Date(toDate);
-      to.setHours(23, 59, 59, 999);
-
+    function fetchDataForDate(formattedDate) {
       fetch(url)
         .then(res => res.text())
         .then(text => {
@@ -149,25 +102,14 @@
           const rows = json.table.rows;
 
           const orders = [];
-          latestCSV = "وقت الطلب,ملخص الطلب,رقم الطاولة,ملاحظات\n";
-
           rows.forEach(r => {
             const c = r.c;
-            const fullDate = c[0]?.f || "";
+            const rawDate = (c[0]?.f || "").split(" ")[0];
             const summary = c[1]?.v || "";
-            const table = c[2]?.v?.toString() || "";
-            const notes = c[3]?.v || "";
+            const table = c[2]?.v || "";
 
-            if (!fullDate) return;
-
-            const [datePart, timePart] = fullDate.split(' ');
-            const [month, day, year] = datePart.split('/').map(Number);
-            const [hour, minute, second] = timePart.split(':').map(Number);
-            const rowDate = new Date(year, month - 1, day, hour, minute, second);
-
-            if (rowDate >= from && rowDate <= to && summary && (!tableFilter || table.includes(tableFilter))) {
+            if (rawDate === formattedDate && summary) {
               orders.push({ summary, table });
-              latestCSV += `"${fullDate}","${summary.replace(/\n/g, " ")}","${table}","${notes}"\n`;
             }
           });
 
@@ -205,40 +147,26 @@
     }
 
     function drawChart(itemCount) {
-      const ctxBar = document.getElementById("itemChart").getContext("2d");
-      const ctxPie = document.getElementById("pieChart").getContext("2d");
+      const ctx = document.getElementById("itemChart").getContext("2d");
       const labels = Object.keys(itemCount);
       const data = Object.values(itemCount);
 
       if (chart) chart.destroy();
-      if (pieChart) pieChart.destroy();
 
-      chart = new Chart(ctxBar, {
+      chart = new Chart(ctx, {
         type: 'bar',
         data: {
           labels: labels,
-          datasets: [{ label: 'عدد الطلبات', data: data, backgroundColor: '#42a5f5' }]
-        },
-        options: {
-          responsive: true,
-          plugins: { legend: { display: false } },
-          scales: {
-            y: { beginAtZero: true, title: { display: true, text: 'الكمية' } },
-            x: { title: { display: true, text: 'الصنف' } }
-          }
-        }
-      });
-
-      pieChart = new Chart(ctxPie, {
-        type: 'pie',
-        data: {
-          labels: labels,
-          datasets: [{ data: data, backgroundColor: labels.map(() => `hsl(${Math.random()*360}, 70%, 70%)`) }]
+          datasets: [{
+            label: 'عدد الطلبات',
+            data: data,
+            backgroundColor: '#42a5f5'
+          }]
         },
         options: {
           responsive: true,
           plugins: {
-            legend: { position: 'right' },
+            legend: { display: false },
             tooltip: {
               callbacks: {
                 label: function(context) {
@@ -246,21 +174,18 @@
                 }
               }
             }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: { display: true, text: 'الكمية' }
+            },
+            x: {
+              title: { display: true, text: 'الصنف' }
+            }
           }
         }
       });
-    }
-
-    function printReport() {
-      window.print();
-    }
-
-    function exportCSV() {
-      const blob = new Blob([latestCSV], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = 'تقرير_الطلبات.csv';
-      link.click();
     }
   </script>
 </body>
