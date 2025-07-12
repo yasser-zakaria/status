@@ -65,8 +65,12 @@
       font-weight: bold;
       color: #2e7d32;
     }
-    canvas {
+    .chart-container {
+      display: flex;
+      justify-content: center;
       margin-top: 40px;
+    }
+    canvas {
       max-width: 700px;
       background: white;
       border-radius: 10px;
@@ -109,7 +113,9 @@
     </div>
   </div>
 
-  <canvas id="itemChart"></canvas>
+  <div class="chart-container">
+    <canvas id="itemChart"></canvas>
+  </div>
 
   <script>
     const sheetID = "1bq1d1JsNjUTPjZmAGAGe8a8M8kPeS4dKA0ZW1ucL9fc";
