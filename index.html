@@ -129,7 +129,7 @@
 
       const from = new Date(fromDate);
       const to = new Date(toDate);
-      to.setHours(23, 59, 59, 999); // تغطية اليوم بالكامل
+      to.setHours(23, 59, 59, 999);
 
       fetch(url)
         .then(res => res.text())
@@ -142,14 +142,14 @@
 
           rows.forEach(r => {
             const c = r.c;
+            const rawValue = c[0]?.v;
             const fullDate = c[0]?.f || "";
             const summary = c[1]?.v || "";
             const table = c[2]?.v?.toString() || "";
             const notes = c[3]?.v || "";
 
-            const rawDate = fullDate.split(" ")[0];
-            const dateParts = rawDate.split("/");
-            const rowDate = new Date(`${dateParts[2]}-${dateParts[0]}-${dateParts[1]}`);
+            if (!rawValue) return;
+            const rowDate = new Date(rawValue);
 
             if (rowDate >= from && rowDate <= to && summary && (!tableFilter || table.includes(tableFilter))) {
               orders.push({ summary, table });
