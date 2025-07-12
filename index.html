@@ -88,9 +88,13 @@
             const table = c[2]?.v || "";
             if (!dateStr || !summary) return;
 
-            const fullDate = new Date(dateStr);
-            const dateOnly = fullDate.toISOString().split("T")[0];
-            if (dateOnly === selectedDate) {
+            // معالجة التاريخ بشكل يدوي
+            const match = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+            if (!match) return;
+            const [_, month, day, year] = match;
+            const formattedDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+
+            if (formattedDate === selectedDate) {
               orders.push({ summary, table });
             }
           });
